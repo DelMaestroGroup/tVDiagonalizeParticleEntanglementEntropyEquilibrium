@@ -1,3 +1,5 @@
+using Printf
+
 """
 Calculate the particle entanglement entropy for an eigenstate of the one-site-translation operator with eigenvalue q=0.
 """
@@ -137,3 +139,19 @@ CyclesB=0
     end
 end
 
+
+function save_obdm(obdm::Matrix{Float64},M::Int64,N::Int64,V::Float64,Vp::Float64)
+    obdm_name = @sprintf "obdm_%02d_%02d_%+5.3f_%+5.3f.dat" M N V Vp
+                obdm_f = open(obdm_name, "w")
+                write(obdm_f, @sprintf "#%11s" "|i-j|") 
+                write(obdm_f, "\n")
+                flush(obdm_f)
+
+                for i = 1:M
+                    write(obdm_f, @sprintf "%16d" (i-Int(M/2))) 
+                    write(obdm_f, @sprintf "%16.6E" obdm[i]) 
+                    write(obdm_f, "\n")
+                    flush(obdm_f)
+                end
+                close(obdm_f)
+end

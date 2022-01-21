@@ -4,18 +4,8 @@ push!(LOAD_PATH, joinpath(dirname(@__FILE__), "src"))
 
 using tVVpDiagonalize
 using ArgParse
-using IntFermionicbasis
-using Arpack
-using Printf
-using LinearAlgebra
-
-struct FileHeader
-    M::Int64
-    N::Int64 
-    basis_num:: Int64 
-    V::Float64 
-    Vp::Float64 
-end
+using IntFermionicbasis 
+using Printf 
 
 # ------------------------------------------------------------------------------
 function parse_commandline()
@@ -146,9 +136,9 @@ function main()
     # state output file
     if c[:save_states] || c[:load_states]
         if c[:states_file] === nothing
-            Ψt_output = @sprintf "psioft_%02d_%02d_%+5.3f_%+5.3f.dat" M N V Vp
+            Ψ_output = @sprintf "psioft_%02d_%02d_%+5.3f_%+5.3f.dat" M N V Vp
         else
-            Ψt_output=c[:states_file]
+            Ψ_output=c[:states_file]
         end
     end
 
@@ -175,91 +165,42 @@ function main()
     end 
 
     #_______________________________________________________________________________
-    basis = Fermionsbasis(M, N)
-    ll=length(basis)
-    μ=zeros(Float64, M)
-    exp_q=zeros(ComplexF64, basis.K)
-    #  Initial wave function in terms of the spatial basis
-    Ψn=ComplexF64
+    # setting up the basis
+    basis = Fermionsbasis(M, N) 
     # the one body density matrix
     obdm=zeros(Float64,M,1)
     # Exploit symmetries of the hamiltonian to perform a bloack diagonalization
-    Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order =Symmetry_Cycles_q0R1PH1(basis)
-        #println("size(Cycles) = ",Base.summarysize(Cycles)/1024^3," gb")
-    #_______________________________________________________________________________
+    Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order =Symmetry_Cycles_q0R1PH1(basis) 
 
 
     if ~c[:load_states]  
-        #---------------------------------------find the states---------------------------------------
-        # Create the Hamiltonian 
-        #H = sparse_hamiltonian(basis,c[:t],V0,Vp0 ,boundary=boundary) 
-        H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis, Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, c[:t],V,Vp) 
-        #println("size(H) = ",Base.summarysize(H)/1024^3," gb")
-        print(" sparse_hamiltonian finish\n ")
-        # H0 = full_hamiltonian(basis, c[:t], V0,boundary=boundary)
-        # EigenValues, EigenVectors = eig(H0)
-        # wft0 = EigenVectors[:,1]
-
-        #Perform the Lanczos diagonalization to obtain the lowest eigenvector
-        # http://docs.julialang.org/en/release-0.3/stdlib/linalg/?highlight=lanczos
-        Ψ=zeros(ComplexF64, HRank)
-        # I don't understand why this copying is necessary, it is a type conversion thing
-        #
-        #evals = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(c[:t],V0,boundary,basis, HRank, CycleSize, InvCycles_Id))[1]
-        #println(evals)
-        #exit(0)
-
-        Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(c[:t],V,boundary,basis, HRank, CycleSize, InvCycles_Id))[2][1: HRank].*ones(ComplexF64, HRank)
-        #Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(c[:t],V0,boundary,basis, HRank,))[2][1: HRank].*ones(ComplexF64, HRank)
-        #println("size(complex) = ", Base.summarysize(Ψ[1]))
-        H= Nothing
-        Ψ.= Ψ./sqrt(dot(Ψ,Ψ))
- 
+        #---------------------------------------find the ground state using Lanczos diagonalization---------------------------------------
+        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, c[:t],V,Vp,boundary)  
     else  
-        #---------------------------------------load the states---------------------------------------
         Cycles= Nothing
         InvCycles_order= Nothing
-        ######file_header1=Array{Int64}(4)
-        ######file_header2=Array{Float64}(4)
-        file_header1 =zeros(Int64,3)
-        file_header2 =zeros(Float64,2)
-        Ψf=open(Ψt_output, "r")
-            read!(Ψf,file_header1)
-            read!(Ψf,file_header2)
-            M_f=file_header1[1]
-            N_f=file_header1[2] 
-            basis_num_f=file_header1[3] 
-            V_f=file_header2[1] 
-            Vp_f=file_header2[2]   
-            if (M_f!=M) || (N_f!=N)  ||(abs(V_f- V)> 1.0E-12)||(abs(Vp_f- Vp)> 1.0E-12)  
-                println("the file of states is not compatible with the input parameters" )
-                println("M=",M," N=",N," V=",V," Vp=",Vp)
-                println("M_f=",M_f," N_f=",N_f," V_f=",V_f," Vp_f=",Vp_f)
-                exit(1)
-            end 
-            Ψ=zeros(ComplexF64, NumOfCycles)  
-            read!(Ψf, Ψ)
-        close(Ψf)
-        HRank = basis_num_f
-        HqRank = basis_num_f
+        #---------------------------------------load the ground state---------------------------------------
+        Ψ, HRank = load_ground_state(Ψ_output,M,N,V,Vp,NumOfCycles)
     end
+
     if ~c[:save_states] 
         #---------------------------------------calculate the entanglement---------------------------------------
         AmatrixStructure =PE_StructureMatrix(basis, Asize, InvCycles_Id)
 
+        Ψ_coeff = Ψ
         for j=1: HRank
-            Ψ[j]=Ψ[j]/sqrt(CycleSize[j])
+            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(CycleSize[j])
         end
 
         if c[:spatial]
-            s_spatial = spatial_entropy(basis, ℓsize, Ψ, InvCycles_Id)
+            s_spatial = spatial_entropy(basis, ℓsize, Ψ_coeff, InvCycles_Id)
             write(f_spat, @sprintf "%24.12E%24.12E\n" s_spatial[1] s_spatial[2])
             flush(f_spat)
         end
 
         # measure the pair correlation function
         if c[:g2]
-            g2 = pair_correlation(basis,Ψ, InvCycles_Id) 
+            g2 = pair_correlation(basis,Ψ_coeff, InvCycles_Id) 
             for x=1:M
                 write(f_g2, @sprintf "%24.12E" g2[x])
             end
@@ -268,10 +209,10 @@ function main()
         end
 
         if c[:obdm] && Asize == 1
-            s_particle,obdm[:] = particle_entropy_Ts(basis, Asize, Ψ,c[:obdm], AmatrixStructure)
+            s_particle,obdm[:] = particle_entropy_Ts(basis, Asize, Ψ_coeff,c[:obdm], AmatrixStructure)
 
         else
-            s_particle = particle_entropy_Ts(basis, Asize, Ψ,c[:obdm], AmatrixStructure)
+            s_particle = particle_entropy_Ts(basis, Asize, Ψ_coeff,c[:obdm], AmatrixStructure)
 
         end
 
@@ -290,28 +231,11 @@ function main()
         #_______________________________________________________________________________
         # output the time dependent OBDM to disk
         if c[:obdm] && Asize == 1
-            obdm_name = @sprintf "obdm_%02d_%02d_%+5.3f_%+5.3f.dat" M N V Vp
-                obdm_f = open(obdm_name, "w")
-                write(obdm_f, @sprintf "#%11s" "|i-j|") 
-                write(obdm_f, "\n")
-                flush(obdm_f)
-
-                for i = 1:M
-                    write(obdm_f, @sprintf "%16d" (i-Int(M/2))) 
-                    write(obdm_f, @sprintf "%16.6E" obdm[i]) 
-                    write(obdm_f, "\n")
-                    flush(obdm_f)
-                end
-                close(obdm_f)
+            save_obdm(obdm,M,N,V,Vp)
         end
     else 
-        #---------------------------------------save the states---------------------------------------
-
-        file_header= FileHeader(M, N, HRank, V, Vp)
-        Ψf=open(Ψt_output, "w")
-            write(Ψf, file_header.M, file_header.N, file_header.basis_num, file_header.V, file_header.Vp,Ψ)
-            flush(Ψf)
-        close(Ψf)
+        #---------------------------------------save the ground state---------------------------------------
+        save_ground_state(Ψ_output,Ψ,M,N,HRank,V,Vp)
     end
 
 end

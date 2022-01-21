@@ -8,8 +8,7 @@ using Test
 
 using tVVpDiagonalize  
 using ArgParse
-using IntFermionicbasis
-using Arpack
+using IntFermionicbasis 
 using Printf
 using LinearAlgebra
 
@@ -43,28 +42,25 @@ end
         basis = Fermionsbasis(M, N)
         # compute cycles 
         Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order = Symmetry_Cycles_q0R1PH1(basis)
-        # compute ground state
-        H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis, Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp) 
-        Ψ=zeros(ComplexF64, HRank) 
-        psi0_trial = get_psi0_trial(t,V,boundary,basis, HRank, CycleSize, InvCycles_Id)
-        Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=psi0_trial)[2][1: HRank].*ones(ComplexF64, HRank)
-        H= Nothing
-        Ψ.= Ψ./sqrt(dot(Ψ,Ψ))   
+        # compute ground state 
+        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary) 
+        # coefficents of basis states appearing in each cycle (renaming just for clarity)
+        Ψ_coeff = Ψ 
         for j=1: HRank
-           Ψ[j]=Ψ[j]/sqrt(CycleSize[j])
+            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(CycleSize[j])
         end
         # calculate spatial entanglement
         ℓsize = div(M, 2)
-        s_spatial = spatial_entropy(basis, ℓsize, Ψ, InvCycles_Id)
+        s_spatial = spatial_entropy(basis, ℓsize, Ψ_coeff, InvCycles_Id)
         # pair correlation function
-        g2 = pair_correlation(basis,Ψ, InvCycles_Id) 
+        g2 = pair_correlation(basis,Ψ_coeff, InvCycles_Id) 
         test_approx(g2, pair_correlations_truth, tol, verbose)
         # structure matrix
         AmatrixStructure =PE_StructureMatrix(basis, n, InvCycles_Id)
         if n==1
-            s_particle, obdm = particle_entropy_Ts(basis, n, Ψ,true, AmatrixStructure)
+            s_particle, obdm = particle_entropy_Ts(basis, n, Ψ_coeff,true, AmatrixStructure)
         else
-            s_particle = particle_entropy_Ts(basis, n, Ψ,true, AmatrixStructure)
+            s_particle = particle_entropy_Ts(basis, n, Ψ_coeff,true, AmatrixStructure)
         end
 
         # test against production code result 
