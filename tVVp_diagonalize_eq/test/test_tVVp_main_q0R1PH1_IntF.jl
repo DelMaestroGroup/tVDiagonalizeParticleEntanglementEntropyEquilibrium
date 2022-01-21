@@ -35,7 +35,7 @@ end
     comparing with S1_spatial_truth, S2_spatial_truth, S1_particle_truth, S2_particle_truth
     allowing for a tolerance tol.
     """
-    function tests_entropies(t::Float64,V::Float64,Vp::Float64,M::Int64,N::Int64,n::Int64,l::Int64,S1_spatial_truth::Float64, S2_spatial_truth::Float64, S1_particle_truth::Float64, S2_particle_truth::Float64,pair_correlations_truth::Vector{Float64},boundary::BdryCond=PBC, tol::Float64=0.0; verbose=VERBOSE)  
+    function tests_entropies(t::Float64,V::Float64,Vp::Float64,M::Int64,N::Int64,n::Int64,l::Int64,S1_spatial_truth::Float64, S2_spatial_truth::Float64, S1_particle_truth::Float64, S2_particle_truth::Float64,pair_correlations_truth::Vector{Float64},boundary::BdryCond=PBC, tol::Float64=0.0, load_offdiag::Bool=false, save_offdiag::Bool=false; verbose=VERBOSE)  
         # init 
         obdm=zeros(Float64,M)
         # construct basis
@@ -43,7 +43,7 @@ end
         # compute cycles 
         Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order = Symmetry_Cycles_q0R1PH1(basis)
         # compute ground state 
-        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary) 
+        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary,load_offdiag,save_offdiag) 
         # coefficents of basis states appearing in each cycle (renaming just for clarity)
         Ψ_coeff = Ψ 
         for j=1: HRank
@@ -144,6 +144,80 @@ end
             S2_particle_truth=6.931465943021E-01,
             pair_correlations_truth= [5.000000000000E-01,9.997000789381E-05,4.998000699802E-01,1.999500076619E-04,4.998000200165E-01,1.999799967261E-04,4.998000199821E-01,1.999800178869E-04,4.998000199821E-01,1.999799967261E-04,4.998000200165E-01,1.999500076619E-04,4.998000699802E-01,9.997000789381E-05],
             boundary=PBC, 
+            tol=0.0)
+    push!(testcases,params)
+    # test case 5
+    params = (
+            t=0.1,
+            V=0.003,
+            Vp=0.0,
+            M=14,
+            N=7,
+            n=1,
+            l=7,
+            S1_spatial_truth=1.226149079417E+00, 
+            S2_spatial_truth=9.781005910398E-01, 
+            S1_particle_truth=1.688303810217E-04, 
+            S2_particle_truth=2.862259822134E-05,
+            pair_correlations_truth= [5.000000000000E-01,1.462109470708E-01,2.507619036892E-01,2.366314147620E-01,2.502528490923E-01,2.435806164301E-01,2.501697681511E-01,2.447850016088E-01,2.501697681511E-01,2.435806164301E-01,2.502528490923E-01,2.366314147620E-01,2.507619036892E-01,1.462109470708E-01],
+            boundary=PBC, 
+            tol=0.0,
+            load_offdiag=false,
+            save_offdiag=true)
+    push!(testcases,params)
+    # test case 6
+    params = (
+            t=0.1,
+            V=0.003,
+            Vp=0.0,
+            M=14,
+            N=7,
+            n=1,
+            l=7,
+            S1_spatial_truth=1.226149079417E+00, 
+            S2_spatial_truth=9.781005910398E-01, 
+            S1_particle_truth=1.688303810217E-04, 
+            S2_particle_truth=2.862259822134E-05,
+            pair_correlations_truth= [5.000000000000E-01,1.462109470708E-01,2.507619036892E-01,2.366314147620E-01,2.502528490923E-01,2.435806164301E-01,2.501697681511E-01,2.447850016088E-01,2.501697681511E-01,2.435806164301E-01,2.502528490923E-01,2.366314147620E-01,2.507619036892E-01,1.462109470708E-01],
+            boundary=PBC, 
+            tol=0.0,
+            load_offdiag=true,
+            save_offdiag=false)
+    push!(testcases,params)
+    # test case 7
+    params = (
+            t=1.0,
+            V=100.0,
+            Vp=0.0,
+            M=14,
+            N=7,
+            n=5,
+            l=7,
+            S1_spatial_truth=6.951898117047E-01, 
+            S2_spatial_truth=6.935472606275E-01, 
+            S1_particle_truth=6.931479839384E-01, 
+            S2_particle_truth=6.931465943021E-01,
+            pair_correlations_truth= [5.000000000000E-01,9.997000789381E-05,4.998000699802E-01,1.999500076619E-04,4.998000200165E-01,1.999799967261E-04,4.998000199821E-01,1.999800178869E-04,4.998000199821E-01,1.999799967261E-04,4.998000200165E-01,1.999500076619E-04,4.998000699802E-01,9.997000789381E-05],
+            boundary=PBC, 
+            tol=0.0,
+            load_offdiag=true,
+            save_offdiag=false)
+    push!(testcases,params)
+    # test case 8
+    params = (
+            t=2.3,
+            V=0.3,
+            Vp=1.3,
+            M=14,
+            N=7,
+            n=3,
+            l=7,
+            S1_spatial_truth=1.238733545053E+00, 
+            S2_spatial_truth=9.893307250029E-01, 
+            S1_particle_truth=5.064243992800E-02, 
+            S2_particle_truth=1.482187045819E-02, 
+            pair_correlations_truth= [5.000000000000E-01,1.571939107499E-01,2.310417986060E-01,2.453536553746E-01,2.493565776083E-01,2.448472790070E-01,2.491579823775E-01,2.460975925536E-01,2.491579823775E-01,2.448472790070E-01,2.493565776083E-01,2.453536553746E-01,2.310417986060E-01,1.571939107499E-01],
+            boundary=PBC,
             tol=0.0)
     push!(testcases,params)
 

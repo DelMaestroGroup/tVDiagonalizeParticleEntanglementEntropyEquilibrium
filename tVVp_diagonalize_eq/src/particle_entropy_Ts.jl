@@ -5,7 +5,7 @@ Calculate the particle entanglement entropy for an eigenstate of the one-site-tr
 """
 function particle_entropy_Ts(basis::AbstractFermionsbasis, Asize::Int, d::Vector{ComplexF64}, measure_obdm::Bool, AmatrixStructure:: Array{Int64,3})
 
-    SRen = zeros(Float64,3)
+    SRen = zeros(Float64,11)
     DimA=Int64
     DimB=Int64
     DimAdA=Int64
@@ -121,16 +121,19 @@ CyclesB=0
 #  println("  λ ", λ )
 
     LogNn=log(factorial(basis.N)/factorial(Bsize)/factorial(Asize))
-    SRen[1]=0
+    SRen[1]=0 
     for k=1: NumOfCyclesA*L
-
         if λ[k]>0
-            SRen[1] += λ[k]*log(λ[k])
-	end
+            SRen[1] += λ[k]*log(λ[k]) 
+	    end
     end
     SRen[1]=-SRen[1]-LogNn
-    SRen[2]=-log(sum(λ.^2))-LogNn
-    SRen[3]=-log(sum(λ.^3))/2-LogNn
+    # all Renyis from 2 to 10
+    for α = 2:10
+        SRen[α]=-log(sum(λ.^α))/(α-1)-LogNn
+    end 
+    # Renyi of 1/2: 
+    SRen[11] =2*log(sum(sqrt.(λ)))-LogNn
 
     if measure_obdm && Asize==1
         return SRen,obdm

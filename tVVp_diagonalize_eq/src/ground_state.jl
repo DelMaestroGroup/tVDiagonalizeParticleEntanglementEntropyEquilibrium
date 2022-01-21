@@ -34,9 +34,9 @@ end
 """Setup Hamiltonian q=0, P=1, R=1 block in sparse format and compute the ground state wavefunction in the symmetry basis.
 also returns the rank of the Hamiltonian, i.e. length of Ψ.
 """
-function ground_state(basis::AbstractFermionsbasis,Cycles::Matrix{Int64}, CycleSize::Vector{Int64}, NumOfCycles::Int64, InvCycles_Id::Vector{Int64}, InvCycles_order::Vector{Int64}, t::Float64,V::Float64,Vp::Float64,boundary::BdryCond)
+function ground_state(basis::AbstractFermionsbasis,Cycles::Matrix{Int64}, CycleSize::Vector{Int64}, NumOfCycles::Int64, InvCycles_Id::Vector{Int64}, InvCycles_order::Vector{Int64}, t::Float64,V::Float64,Vp::Float64,boundary::BdryCond,load_offdiag::Bool=false,save_offdiag::Bool=false,storage_path::String="./")
 
-    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis, Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp) 
+    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis, Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,load_offdiag,save_offdiag,storage_path) 
     print(" sparse_hamiltonian finish\n ")
     Ψ=zeros(ComplexF64, HRank)  
     Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t,V,boundary,basis, HRank, CycleSize, InvCycles_Id))[2][1: HRank].*ones(ComplexF64, HRank)
