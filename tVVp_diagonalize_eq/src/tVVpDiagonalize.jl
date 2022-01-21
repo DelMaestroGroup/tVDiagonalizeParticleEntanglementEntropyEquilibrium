@@ -1,4 +1,4 @@
- module tVVpDiagonalize
+module tVVpDiagonalize
 
 using IntFermionicbasis
 using SparseArrays
@@ -8,7 +8,6 @@ export
     BdryCond,
     OBC,
     PBC,
-
     sparse_hamiltonian,
     spatial_entropy,
     particle_entropy_Ts,
@@ -17,7 +16,9 @@ export
     Symmetry_Cycles_q0R1PH1,
     Block_Diagonal_Hamiltonian_q0R1PH1,
     sparse_Block_Diagonal_Hamiltonian_q0R1PH1,
-    full_hamiltonian
+    full_hamiltonian,
+    getΨ0_trial,
+    pair_correlation
 """
 Boundary conditions.
 """
@@ -34,4 +35,6 @@ include("Symmetry_Cycles_q0R1PH1.jl")
 include("Block_Diagonal_Hamiltonian_q0R1PH1.jl")
 include("sparse_Block_Diagonal_Hamiltonian_q0R1PH1.jl")
 include("full_hamiltonian.jl")
+include("get_psi0_trial.jl")
+include("pair_correlations.jl")
 end
