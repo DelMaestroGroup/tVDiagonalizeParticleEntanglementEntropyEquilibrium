@@ -40,7 +40,7 @@ function parse_commandline()
             action = :store_true 
         "--states-file"
             metavar = "FILE"
-            help = "path to I/O file for states"
+            help = "path to I/O file for states" 
 
     end
     add_arg_group(s, "boundary conditions")
@@ -146,7 +146,7 @@ function main()
     if ~c[:save_states]
         f_part = open(output, "w")
         write(f_part, "# M=$(M), N=$(N), V=$(V), Vp=$(Vp), $(boundary)\n")
-        write(f_part,@sprintf "#%24s%24s\n" "S₁(n=$(Asize))" "S₂(n=$(Asize))")
+        write(f_part,@sprintf "#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n"  "S₀₋₅(n=$(Asize))" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))")
         if c[:spatial]
             ℓsize = div(M, 2)
             f_spat = open(spat_output, "w")
@@ -216,7 +216,7 @@ function main()
 
         end
 
-        write(f_part, @sprintf "%24.12E%24.12E\n" s_particle[1] s_particle[2]) 
+        write(f_part, @sprintf "%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E\n" s_particle[11] s_particle[1] s_particle[2] s_particle[3] s_particle[4] s_particle[5] s_particle[6] s_particle[7] s_particle[8] s_particle[9] s_particle[10]) 
         
         
         # close output files

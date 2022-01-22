@@ -45,13 +45,16 @@ function spatial_entropy(basis::AbstractFermionsbasis, A, d::Vector{ComplexF64},
     if err_sp > 1e-12
         warn("RDM eigenvalue error ", err_sp)
     end
-    S1_sp = 0.0
+    Sα = zeros(Float64,11)  
     for k=1:length(S_sp)
         if abs(S_sp[k])>0
-            S1_sp -= abs(S_sp[k])^2*log(abs(S_sp[k])^2)
+            Sα[1] -= abs(S_sp[k])^2*log(abs(S_sp[k])^2)
 	end
     end
-    S2_sp = -log(abs(sum(S_sp.^4)))
+    for α = 2:10
+        Sα[α] = -log(abs(sum(S_sp.^(2*α))))/(α-1)
+    end
+    Sα[11] = 2*log(abs(sum(S_sp)))
 
     # Operational.
     #Ss_op = [S / sqrt(n) for (S, n) in zip(Ss_raw, norms)]
@@ -66,7 +69,7 @@ function spatial_entropy(basis::AbstractFermionsbasis, A, d::Vector{ComplexF64},
     #S2s_op = [-log(sum(S.^4)) for S in Ss_op]
     #S2_op = dot(norms, S2s_op)
 
-    S1_sp, S2_sp
+    Sα
 end
 
 spatial_entropy(basis::AbstractFermionsbasis, Asize::Int, d::Vector{ComplexF64},InvCycles_Id::Vector{Int64}) = spatial_entropy(basis, 1:Asize, d, InvCycles_Id)

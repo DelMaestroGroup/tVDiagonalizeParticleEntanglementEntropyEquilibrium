@@ -96,7 +96,6 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis,
 end
 
 function save_offdiagonal_terms(storage_path::String, M::Int64,N::Int64,t::Float64, rows::Vector{Int64}, cols::Vector{Int64}, elements::Vector{Float64})
-    print("Saving offdiagonal terms:")
     len_rows = length(rows)
     len_cols = length(cols)
     len_elements = length(elements)
@@ -108,8 +107,7 @@ function save_offdiagonal_terms(storage_path::String, M::Int64,N::Int64,t::Float
             close(H_out) 
 end
 
-function load_offdiagonal_terms(storage_path::String, N::Int64,M::Int64,t::Float64)
-    print("Loading offdiagonal terms:")
+function load_offdiagonal_terms(storage_path::String, N::Int64,M::Int64,t::Float64) 
     file_header =zeros(Int64,5) 
     H_in=open(storage_path, "r")
         read!(H_in,file_header) 

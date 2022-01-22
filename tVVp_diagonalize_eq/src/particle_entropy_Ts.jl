@@ -143,9 +143,10 @@ CyclesB=0
 end
 
 
-function save_obdm(obdm::Matrix{Float64},M::Int64,N::Int64,V::Float64,Vp::Float64)
+function save_obdm(obdm::AbstractArray{Float64},M::Int64,N::Int64,V::Float64,Vp::Float64,storage_folder::String="./")
     obdm_name = @sprintf "obdm_%02d_%02d_%+5.3f_%+5.3f.dat" M N V Vp
-                obdm_f = open(obdm_name, "w")
+    path = joinpath(storage_folder,obdm_name)
+                obdm_f = open(path, "w")
                 write(obdm_f, @sprintf "#%11s" "|i-j|") 
                 write(obdm_f, "\n")
                 flush(obdm_f)
