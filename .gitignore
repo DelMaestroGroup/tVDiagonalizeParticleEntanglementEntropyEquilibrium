@@ -33,3 +33,4 @@ tVVp_diagonalize_eq/test/*.dat
 # preliminary results
 tVVp_diagonalize_eq/out
 tVVp_diagonalize_eq/out/*
+*.dat

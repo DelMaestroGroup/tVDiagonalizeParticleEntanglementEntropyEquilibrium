@@ -10,7 +10,7 @@ function PE_StructureMatrix(basis::AbstractFermionsbasis, Asize::Int, InvCycles_
     Bsize = N - Asize
     if Asize>Bsize
         Asize,Bsize=Bsize,Asize
-    end
+    end 
     if Asize==0
        return zeros(Int64,1,1,1)
     end

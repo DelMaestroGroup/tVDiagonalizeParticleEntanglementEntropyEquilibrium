@@ -43,6 +43,12 @@ function parse_commandline()
         "--skip_hoffdiag_saving"
             help = "do not save offdiagonal terms of Hamiltonian for V=0" 
             action = :store_true
+        "--skip_hoffdiag_loading"
+            help = "do not load offdiagonal terms of Hamiltonian from V=0 case" 
+            action = :store_true
+        "--no-flush"
+            help = "do not flush write buffer to output files in after computation for each V" 
+            action = :store_true
 
     end
     add_arg_group(s, "boundary conditions")
@@ -102,6 +108,65 @@ function parse_commandline()
         return parse_args(s, as_symbols=true)
 end
 
+"""Use 'write' to write string to IOstream (e.g. write to a file) and flush IOstream if toflush is true."""
+function write_flush(stream::IO,str::String,toflush::Bool=true)
+    write(stream, str)
+    if toflush
+        flush(stream)
+    end
+end
+
+"""Runs entanglement calculation for a range of interaction strenths V based on the input parameters.
+
+Usage: 
+        julia tVVp_Vdependence_q0R1PH1_IntF.jl 
+                    [--out FOLDER] [--tmp FOLDER]
+                    [--out-obdm FOLDER] [--g2] [--obdm]
+                    [--spatial] [--skip-hoffdiag-saving]
+                    [--skip-hoffdiag-saving]
+                    [--no-flush] [--pbc] [--obc]
+                    [--V-start V_start] [--V-end V_end]
+                    [--V-step V_step] [--Vp Vp] [--t t] --ee ℓ M N
+
+positional arguments:
+                    M                     number of sites (type: Int64)
+                    N                     number of particles (type: Int64)
+                  
+optional arguments:
+                    --out FOLDER          path to output folder
+                    --tmp FOLDER          folder for hamiltonian storage location
+                    --out-obdm FOLDER     folder for obdm storage location (if --obdm
+                                          provided)
+                    --g2                  output the pair correlation function ⟨ρ_iρ_0⟩
+                    --obdm                output the spatial dependence of the OBDM
+                    --spatial             output the spatial entanglement entropy for ℓ
+                                          = M/2
+                    --skip-hoffdiag-saving
+                                          do not save offdiagonal terms of Hamiltonian
+                                          for V=0 (if already saved or should never be 
+                                          saved in combination with --skip-hoffdiag-loading)
+                    --skip-hoffdiag-loading
+                                          do not load offdiagonal terms of Hamiltonian
+                                          from V=0
+                    --no-flush            do not flush write buffer to output files in
+                                          after computation for each V
+                    -h, --help            show this help message and exit
+                  
+boundary conditions:
+                    --pbc                 periodic boundary conditions (default)
+                    --obc                 open boundary conditions
+                  
+tV parameters:
+                    --V-start V_start     start V (type: Float64, default: -2.0)
+                    --V-end V_end         end V (type: Float64, default: 2.0)
+                    --V-step V_step       step in V (type: Float64, default: 0.1)
+                    --Vp Vp               final Vp (type: Float64, default: 0.0)
+                    --t t                 t value (type: Float64, default: 1.0)
+                  
+entanglement entropy:
+                    --ee ℓ                compute all EEs with partition size ℓ (type:
+                                          Int64)
+"""
 function main()
  # _____________1_Parameter_Setup________________
     c=parse_commandline()
@@ -151,8 +216,8 @@ function main()
         # write initial header
         write(file_pe_01, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), n=$(Asize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_pe_01, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write(file_pe_01,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(Asize))" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))")
-            
+        write_flush(file_pe_01,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(Asize))" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))")
+ 
     # 2.2. output of spatial entanglement (se_02)
     if c[:spatial]   
         # function to convert data to string
@@ -163,7 +228,7 @@ function main()
         # write initial header
         write(file_se_02, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), l=$(ℓsize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_se_02, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write(file_se_02,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(ℓsize))" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))")      
+        write_flush(file_se_02,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(ℓsize))" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))")      
     end
 
     # 2.3. output of pair correlations (pcf_03)
@@ -187,7 +252,7 @@ function main()
         for x=0:M-1
             write(file_pcf_03,@sprintf "%24d" x )
         end 
-        write(file_pcf_03,"\n" )
+        write_flush(file_pcf_03,"\n" ) 
     end
 
  # _____________3_Calculation______________________
@@ -201,7 +266,7 @@ function main()
     end
     for V in ProgressBar(V_array)
         # compute ground state 
-        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary,~c[:skip_hoffdiag_saving], false,tmp_folder) 
+        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary,~c[:skip_hoffdiag_loading], false,tmp_folder) 
         # coefficents of basis states appearing in each cycle (renaming just for clarity)
         Ψ_coeff = Ψ 
         for j=1: HRank
@@ -218,36 +283,36 @@ function main()
                 s_particle = particle_entropy_Ts(basis, Asize, Ψ_coeff,false, AmatrixStructure)
             end
             # save to file
-            write(file_pe_01, out_str_pe_01(V,s_particle))
+            write_flush(file_pe_01, out_str_pe_01(V,s_particle), ~c[:no_flush]) 
 
         # 3.2 calculate spatial entanglement 
         if c[:spatial]
             s_spatial = spatial_entropy(basis, ℓsize, Ψ_coeff, InvCycles_Id)
             # save to file
-            write(file_se_02, out_str_se_02(V,s_spatial))
+            write_flush(file_se_02, out_str_se_02(V,s_spatial), ~c[:no_flush])
         end
 
         # 3.3 pair correlation function
         if c[:g2]
             g2 = pair_correlation(basis,Ψ_coeff, InvCycles_Id)  
             # save to file
-            write(file_pcf_03, out_str_pcf_03(V,g2))
+            write_flush(file_pcf_03, out_str_pcf_03(V,g2), ~c[:no_flush])
         end
  
     end
 
  # ________4_Output_Finalization___________________
     # 4.1. output of particle entanglement (pe_01)
-        write(file_pe_01,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_pe_01,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_pe_01)    
     # 4.2. output of spatial entanglement (se_02)
     if c[:spatial]
-        write(file_se_02,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_se_02,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_se_02) 
     end 
     # 4.3. output of pair correlations (pcf_03)
     if c[:g2]
-        write(file_pcf_03,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_pcf_03,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_pcf_03)  
     end
 
