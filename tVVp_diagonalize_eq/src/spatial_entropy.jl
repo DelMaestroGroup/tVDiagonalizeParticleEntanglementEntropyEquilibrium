@@ -3,28 +3,29 @@ Calculate both the spatial and the operational entanglement entropies of a
 region A, using the SVD. The latter is the "entanglement of particles"
 introduced by Wiseman and Vaccaro in 2003.
 """
-function spatial_entropy(basis::AbstractFermionsbasis, A, d::Vector{ComplexF64},InvCycles_Id::Vector{Int64})
-    B = setdiff(1:basis.K, A)
+function spatial_entropy(L::Int, N::Int, A, d::Vector{ComplexF64},Cycle_leaders::Vector{Int64})
+    B = setdiff(1:L, A)
     A = convert(Array{Int,1},A)
     # Matrices to SVD
     Amatrices = []
-    for i=0:basis.N
-        DimA = num_vectors(basis, i, length(A))
-        DimB = num_vectors(basis, basis.N-i, length(B))
+    for i=0:N
+        DimA = num_vectors(i, length(A))
+        DimB = num_vectors(N-i, length(B))
 
         push!(Amatrices, zeros(ComplexF64, DimA, DimB))
     end
 
 #    norms = zeros(Float64, basis.N+1)
 
-    for i=1: basis.D
-        braA = SubKet(basis.vectors[i], A)
-        braB = SubKet(basis.vectors[i], B)
+    for v in BasisKetGenerator(L,N)
+        braA = SubKet(v, A)
+        braB = SubKet(v, B)
 
-        row = serial_num(basis, length(A), count_ones(braA), braA)
-        col = serial_num(basis, length(B), count_ones(braB), braB)
+        row = serial_num(length(A), count_ones(braA), braA)
+        col = serial_num(length(B), count_ones(braB), braB)
 
-        Amatrices[1 + count_ones(braA)][row, col] = d[InvCycles_Id[i]]
+        #element is d[InvCycles_Id[i]] 
+        Amatrices[1 + count_ones(braA)][row, col] = d[lookup_cylceID_translationq0R1P1Cycles(v,Cycle_leaders,L)]
 
 #        norms[1 + count_ones(braA)] += abs(d[i])^2
 
@@ -72,4 +73,6 @@ function spatial_entropy(basis::AbstractFermionsbasis, A, d::Vector{ComplexF64},
     Sα
 end
 
-spatial_entropy(basis::AbstractFermionsbasis, Asize::Int, d::Vector{ComplexF64},InvCycles_Id::Vector{Int64}) = spatial_entropy(basis, 1:Asize, d, InvCycles_Id)
+spatial_entropy(L::Int, N::Int, Asize::Int, d::Vector{ComplexF64},Cycle_leaders::Vector{Int64}) = spatial_entropy(L,N, 1:Asize, d, Cycle_leaders)
+
+ 

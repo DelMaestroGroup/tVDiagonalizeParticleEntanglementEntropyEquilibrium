@@ -1,9 +1,18 @@
 using Printf
 
 """
+Calculate structure matrix and entropy in one function to ensure that memory from structure matrix is freed.
+"""
+function particle_entropy_Ts_and_structureMatrix(L::Int, N::Int, Asize::Int, d::Vector{ComplexF64}, Cycle_leaders::Vector{Int64}, measure_obdm::Bool)
+    AmatrixStructure = PE_StructureMatrix(L, N, Cycle_leaders, Asize) 
+    return particle_entropy_Ts(L,N, Asize, d, measure_obdm, AmatrixStructure)
+end
+
+
+"""
 Calculate the particle entanglement entropy for an eigenstate of the one-site-translation operator with eigenvalue q=0.
 """
-function particle_entropy_Ts(basis::AbstractFermionsbasis, Asize::Int, d::Vector{ComplexF64}, measure_obdm::Bool, AmatrixStructure:: Array{Int64,3})
+function particle_entropy_Ts(L::Int, N::Int, Asize::Int, d::Vector{ComplexF64}, measure_obdm::Bool, AmatrixStructure:: Array{Int64,3})
 
     SRen = zeros(Float64,11)
     DimA=Int64
@@ -12,11 +21,10 @@ function particle_entropy_Ts(basis::AbstractFermionsbasis, Asize::Int, d::Vector
     for x = [:fN,:Wa,:Wb]
        @eval $x = Int64
     end
-    norm= Float64
-    facto= Float64
-    AdA_elem= ComplexF64
-    L = basis.K
-    N = basis.N
+    norm = Float64
+    facto = Float64
+    AdA_elem= ComplexF64 
+
     Bsize = N - Asize
     if Asize>Bsize
         Asize,Bsize=Bsize,Asize
@@ -36,16 +44,11 @@ function particle_entropy_Ts(basis::AbstractFermionsbasis, Asize::Int, d::Vector
     end
     DimB = Int(round(facto))
 
-    DimAdA= DimA
-    basisA = Fermionsbasis(L, Asize)
-    basisB = Fermionsbasis(L, Bsize)
-
-    CyclesA, CycleSizeA, NumOfCyclesA =Translational_Symmetry_Cycles(basisA)
-CyclesA=0
-    CyclesB, CycleSizeB, NumOfCyclesB =Translational_Symmetry_Cycles(basisB)
-CyclesB=0
-
-    #λ=Array{Float64}(NumOfCyclesA*L)
+    DimAdA= DimA 
+    # Get cycle sizes and number of cylces in both subspaces but skip leader caclulation/stroage
+    CycleSizeA, NumOfCyclesA = translational_symmetry_cycles_biartition_noleaders(L, Asize) 
+    CycleSizeB, NumOfCyclesB = translational_symmetry_cycles_biartition_noleaders(L, Bsize) 
+ 
     λ=zeros(Float64, NumOfCyclesA*L)
 
     # Weight factors
@@ -53,7 +56,7 @@ CyclesB=0
     Wb=factorial(Bsize)
 
     # Normalization coefficient
-    norm=sqrt(Wa*Wb/factorial(basis.N))
+    norm=sqrt(Wa*Wb/factorial(N))
     Aparity= Asize%2
     Bparity= Bsize%2
     element= ComplexF64
@@ -120,7 +123,7 @@ CyclesB=0
     end
 #  println("  λ ", λ )
 
-    LogNn=log(factorial(basis.N)/factorial(Bsize)/factorial(Asize))
+    LogNn=log(factorial(N)/factorial(Bsize)/factorial(Asize))
     SRen[1]=0 
     for k=1: NumOfCyclesA*L
         if λ[k]>0

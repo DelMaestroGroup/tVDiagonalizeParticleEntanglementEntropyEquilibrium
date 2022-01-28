@@ -49,6 +49,9 @@ function parse_commandline()
         "--no-flush"
             help = "do not flush write buffer to output files in after computation for each V" 
             action = :store_true
+        "--no-recompute-structure-matrix"
+            help = "compute structure matrix once and store it in memory (time efficient but memory intensive)" 
+            action = :store_true 
 
     end
     add_arg_group(s, "boundary conditions")
@@ -141,6 +144,9 @@ optional arguments:
                     --obdm                output the spatial dependence of the OBDM
                     --spatial             output the spatial entanglement entropy for ℓ
                                           = M/2
+                    --no-recompute-structure-matrix 
+                                          compute structure matrix once and store it in 
+                                          memory (time efficient but memory intensive)
                     --skip-hoffdiag-saving
                                           do not save offdiagonal terms of Hamiltonian
                                           for V=0 (if already saved or should never be 
@@ -216,7 +222,7 @@ function main()
         # write initial header
         write(file_pe_01, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), n=$(Asize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_pe_01, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write_flush(file_pe_01,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(Asize))" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))")
+        write_flush(file_pe_01,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))" "S₀₋₅(n=$(Asize))")
  
     # 2.2. output of spatial entanglement (se_02)
     if c[:spatial]   
@@ -228,7 +234,7 @@ function main()
         # write initial header
         write(file_se_02, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), l=$(ℓsize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_se_02, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write_flush(file_se_02,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₀₋₅(n=$(ℓsize))" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))")      
+        write_flush(file_se_02,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))" "S₀₋₅(n=$(ℓsize))")      
     end
 
     # 2.3. output of pair correlations (pcf_03)
@@ -255,46 +261,57 @@ function main()
         write_flush(file_pcf_03,"\n" ) 
     end
 
- # _____________3_Calculation______________________
-    # construct fermion basis
-    basis = Fermionsbasis(M, N)
+ # _____________3_Calculation______________________ 
     # compute symmetry cycles 
-    Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order = Symmetry_Cycles_q0R1PH1(basis)
+    Cycle_leaders, Cycle_sizes, NumOfCycles = symmetry_cycles_q0R1PH1(M, N)
+    # if requested, compute structure matrix only once here 
+    if c[:no_recompute_structure_matrix]
+        AmatrixStructure =PE_StructureMatrix(M, N, Cycle_leaders, Asize) 
+    end
     # save off-diagonal terms once for V=0=V'
-    if ~c[:skip_hoffdiag_saving]
-        ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,0.0,0.0,boundary,false, true, tmp_folder)
+    if ~c[:skip_hoffdiag_saving] 
+        ground_state(M,N,Cycle_leaders, Cycle_sizes, NumOfCycles, t, 0.0, 0.0, boundary, false,true,tmp_folder)
     end
     for V in ProgressBar(V_array)
         # compute ground state 
-        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary,~c[:skip_hoffdiag_loading], false,tmp_folder) 
+        Ψ, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,~c[:skip_hoffdiag_loading],false,tmp_folder)
         # coefficents of basis states appearing in each cycle (renaming just for clarity)
         Ψ_coeff = Ψ 
         for j=1: HRank
-            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(CycleSize[j])
+            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])
         end
 
         # 3.1 particle entanglement
-            AmatrixStructure =PE_StructureMatrix(basis, Asize, InvCycles_Id)
+        if c[:no_recompute_structure_matrix]
             if c[:obdm] && Asize==1 
-                s_particle, obdm = particle_entropy_Ts(basis, Asize, Ψ_coeff,true, AmatrixStructure)
+                s_particle, obdm = particle_entropy_Ts(M, N, Asize, Ψ_coeff, true, AmatrixStructure) 
                 # save obdm to file (one file for each V)
                 save_obdm(obdm,M,N,V,Vp,out_folder_obdm)
             else
-                s_particle = particle_entropy_Ts(basis, Asize, Ψ_coeff,false, AmatrixStructure)
+                s_particle = particle_entropy_Ts(M, N, Asize, Ψ_coeff, false, AmatrixStructure) 
             end
+        else
+            if c[:obdm] && Asize==1 
+                s_particle, obdm = particle_entropy_Ts_and_structureMatrix(M, N, Asize, Ψ_coeff, Cycle_leaders, true) 
+                # save obdm to file (one file for each V)
+                save_obdm(obdm,M,N,V,Vp,out_folder_obdm)
+            else
+                s_particle = particle_entropy_Ts_and_structureMatrix(M, N, Asize, Ψ_coeff, Cycle_leaders, false)  
+            end
+        end
             # save to file
             write_flush(file_pe_01, out_str_pe_01(V,s_particle), ~c[:no_flush]) 
 
         # 3.2 calculate spatial entanglement 
         if c[:spatial]
-            s_spatial = spatial_entropy(basis, ℓsize, Ψ_coeff, InvCycles_Id)
+            s_spatial = spatial_entropy(M, N, ℓsize, Ψ_coeff, Cycle_leaders) 
             # save to file
             write_flush(file_se_02, out_str_se_02(V,s_spatial), ~c[:no_flush])
         end
 
         # 3.3 pair correlation function
         if c[:g2]
-            g2 = pair_correlation(basis,Ψ_coeff, InvCycles_Id)  
+            g2 = pair_correlation(M, N, Ψ_coeff, Cycle_leaders)  
             # save to file
             write_flush(file_pcf_03, out_str_pcf_03(V,g2), ~c[:no_flush])
         end

@@ -28,7 +28,7 @@ function test_approx(got, truth, atol, verbose=true)
 end
 
 # define test cases
-@testset "Test Entropy and Pair Correlations" begin
+@time @testset "Test Entropy and Pair Correlations" begin
     
     """
     Runs test cases for spatial entanglement entropy and particle entanglement entropy
@@ -37,30 +37,27 @@ end
     """
     function tests_entropies(t::Float64,V::Float64,Vp::Float64,M::Int64,N::Int64,n::Int64,l::Int64,S1_spatial_truth::Float64, S2_spatial_truth::Float64, S1_particle_truth::Float64, S2_particle_truth::Float64,pair_correlations_truth::Vector{Float64},boundary::BdryCond=PBC, tol::Float64=0.0, load_offdiag::Bool=false, save_offdiag::Bool=false; verbose=VERBOSE)  
         # init 
-        obdm=zeros(Float64,M)
-        # construct basis
-        basis = Fermionsbasis(M, N)
+        obdm=zeros(Float64,M) 
         # compute cycles 
-        Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order = Symmetry_Cycles_q0R1PH1(basis)
+        Cycle_leaders, Cycle_sizes, NumOfCycles = symmetry_cycles_q0R1PH1(M, N)
         # compute ground state 
-        Ψ, HRank = ground_state(basis,Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,boundary,load_offdiag,save_offdiag) 
+        Ψ, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,load_offdiag,save_offdiag) 
         # coefficents of basis states appearing in each cycle (renaming just for clarity)
         Ψ_coeff = Ψ 
         for j=1: HRank
-            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(CycleSize[j])
+            Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])
         end
         # calculate spatial entanglement
         ℓsize = div(M, 2)
-        s_spatial = spatial_entropy(basis, ℓsize, Ψ_coeff, InvCycles_Id)
+        s_spatial = spatial_entropy(M, N, ℓsize, Ψ_coeff, Cycle_leaders) 
         # pair correlation function
-        g2 = pair_correlation(basis,Ψ_coeff, InvCycles_Id) 
+        g2 = pair_correlation(M,N,Ψ_coeff,Cycle_leaders) 
         test_approx(g2, pair_correlations_truth, tol, verbose)
         # structure matrix
-        AmatrixStructure =PE_StructureMatrix(basis, n, InvCycles_Id)
         if n==1
-            s_particle, obdm = particle_entropy_Ts(basis, n, Ψ_coeff,true, AmatrixStructure)
+            s_particle, obdm = particle_entropy_Ts_and_structureMatrix(M, N, n, Ψ_coeff, Cycle_leaders, true) 
         else
-            s_particle = particle_entropy_Ts(basis, n, Ψ_coeff,true, AmatrixStructure)
+            s_particle = particle_entropy_Ts_and_structureMatrix(M, N, n, Ψ_coeff, Cycle_leaders, false) 
         end
 
         # test against production code result 
@@ -225,4 +222,24 @@ end
     @testset "Test case $i" for i in 1:length(testcases)
             tests_entropies(testcases[i]...) 
     end
+end
+
+# define test cases
+@time @testset "Test Serial Number" begin
+    
+    """
+    Runs test cases for the serial_num function.
+    """
+    basis = Fermionsbasis(12,6)
+    @test serial_num(12,6,63)==1
+    @test serial_num(basis,63)==1
+    @test serial_num(12,6,95)==2
+    @test serial_num(basis,95)==2
+    @test serial_num(12,6,119)==4
+    @test serial_num(basis,119)==4
+    basis = Fermionsbasis(30,15)
+    @test serial_num(30,15,1073680384)==155117517
+    @test serial_num(basis,1073680384)==155117517
+    @test serial_num(30,15,65471)==10
+    @test serial_num(basis,65471)==10
 end

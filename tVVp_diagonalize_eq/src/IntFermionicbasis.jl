@@ -3,7 +3,6 @@ module IntFermionicbasis
 export
     AbstractFermionsbasis,
     Fermionsbasis,
-
     num_vectors,
     serial_num,
     sub_serial_num,
@@ -13,7 +12,8 @@ export
     FlipKet,
     ReverseKet,
     CircshiftKet,
-    SubKet
+    SubKet,
+    BasisKetGenerator
 
 include("IntFermionsbasis_functions.jl")
 

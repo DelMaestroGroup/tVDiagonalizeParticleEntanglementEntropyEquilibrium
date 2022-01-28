@@ -3,7 +3,7 @@ using Arpack
 using Printf
 
 """Obtain a starting point for the Lanczos algorithm based on the phase of the system."""
-function getΨ0_trial(t::Float64, V0::Float64, boundary::BdryCond, basis::AbstractFermionsbasis, Rank::Int64, CycleSize::Vector{Int64},InvCycles_Id::Vector{Int64})
+function getΨ0_trial(t::Float64, V0::Float64, boundary::BdryCond, Rank::Int64, Cycle_sizes::Vector{Int64},NumberOfCycles::Int64)
 
 
     if -1.95 < V0/t < 1.95
@@ -17,13 +17,13 @@ function getΨ0_trial(t::Float64, V0::Float64, boundary::BdryCond, basis::Abstra
             Ψ0_trial[1] = 1.0 #?
         else
             # repulsive: smallest cycle wins
-            i_smallest = argmin(CycleSize[CycleSize.>0]) 
+            i_smallest = argmin(Cycle_sizes[1:NumberOfCycles]) 
             Ψ0_trial[i_smallest] = 1.0 #?
         end 
     end
 
     for j=1: Rank
-       Ψ0_trial[j]= Ψ0_trial[j]*sqrt(CycleSize[j])
+       Ψ0_trial[j]= Ψ0_trial[j]*sqrt(Cycle_sizes[j])
     end
 
     Ψ0_trial.=Ψ0_trial./sqrt(dot(Ψ0_trial,Ψ0_trial))
@@ -34,14 +34,14 @@ end
 """Setup Hamiltonian q=0, P=1, R=1 block in sparse format and compute the ground state wavefunction in the symmetry basis.
 also returns the rank of the Hamiltonian, i.e. length of Ψ.
 """
-function ground_state(  basis::AbstractFermionsbasis,Cycles::Matrix{Int64}, CycleSize::Vector{Int64}, NumOfCycles::Int64, 
-                        InvCycles_Id::Vector{Int64}, InvCycles_order::Vector{Int64}, t::Float64,V::Float64,Vp::Float64,
-                        boundary::BdryCond,load_offdiag::Bool=false,save_offdiag::Bool=false,storage_path::String="./")
+function ground_state(  L::Int, N::Int,Cycle_leaders::Vector{Int64}, Cycle_sizes::Vector{Int64}, NumOfCycles::Int64, 
+                        t::Float64,V::Float64,Vp::Float64,boundary::BdryCond,
+                        load_offdiag::Bool=false,save_offdiag::Bool=false,storage_path::String="./")
 
-    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis, Cycles, CycleSize, NumOfCycles, InvCycles_Id, InvCycles_order, t,V,Vp,load_offdiag,save_offdiag,storage_path) 
+    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L, N ,Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, load_offdiag, save_offdiag, storage_path)
     #print(" sparse_hamiltonian finish\n ")
     Ψ=zeros(ComplexF64, HRank)  
-    Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t,V,boundary,basis, HRank, CycleSize, InvCycles_Id))[2][1: HRank].*ones(ComplexF64, HRank)
+    Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t, V, boundary, HRank, Cycle_sizes,NumOfCycles))[2][1: HRank].*ones(ComplexF64, HRank)
     H= Nothing
     Ψ.= Ψ./sqrt(dot(Ψ,Ψ))   
 

@@ -54,6 +54,49 @@ function Fermionsbasis(K::Int, N::Int)
     end
     Fermionsbasis(K, N, D, vectors)
 end
+
+"""
+Generator for basis states on the fly.
+"""
+struct BasisKetGenerator
+    L::Int
+    N::Int
+    D::Int 
+end
+BasisKetGenerator(L::Int,N::Int) = BasisKetGenerator(L,N,num_vectors(N, L))
+
+struct StateTracker
+    i::Int64
+    last_ket::Int64 
+end
+
+Base.iterate(x::BasisKetGenerator) = (2^x.N-1, StateTracker(1,2^x.N-1))
+
+function Base.iterate(x::BasisKetGenerator, state::StateTracker)
+    if state.i == x.D
+        return nothing
+    end 
+    v = state.last_ket
+    if CheckSite(v,1)==1
+        j=findfirstEmpty(v)
+        v=EmptySite(v,j-1)
+        v=OccupySite(v,j)
+    else
+        j=findfirstOccupide(v)
+        k=findFrsEmpAfterFrsOcc(v)
+        v=EmptySite(v,k-j)
+        v=OccupySite(v,k)
+        for l in 1:(k-j-1)
+            v=OccupySite(v,l)
+        end
+        for l in (k-j+1):(k-1)
+            v=EmptySite(v,l)
+        end
+    end 
+    return (v, StateTracker(state.i+1,v))
+end
+
+
 """
     serial_num(K::Int, N::Int, M::Int, v::AbstractVector{Int})
 Compute the serial number of occupation vector `v` in a basis with `K` sites
@@ -74,15 +117,17 @@ function serial_num(K::Int, N::Int, v::Int)
     I
 end
 
-serial_num(basis::Fermionsbasis, v::Int) = serial_num(basis.K, basis.N, v)
 
-serial_num(basis::Fermionsbasis, K::Int, N::Int, v::Int) = serial_num(K, N, v)
+function serial_num(basis:: Fermionsbasis, v::Int)
+    return searchsortedfirst(basis.vectors,v)
+end
+
+
 """
     sub_serial_num(basis::AbstractFermionsbasis, v::AbstractVector{Int})
 Compute the serial number of the reduced occupation vector `v`, which has only
 a subset of the sites present in `basis`.
 """
-
 function sub_serial_num(basis::Fermionsbasis, v::Int)
     K = basis.K
     N = count_ones(v)
@@ -99,31 +144,11 @@ function sub_serial_num(basis::Fermionsbasis, v::Int)
         I += num_vectors(n, K)
     end
 
-    I + serial_num(K, N, v)
+    I + serial_num(basis,v) #serial_num(K, N, v)
 end
 
 Base.getindex(basis::AbstractFermionsbasis, i::Int) = @view basis.vectors[i]
 Base.view(basis::AbstractFermionsbasis, i::Int) = reverse(bits(basis.vectors[i]))
-
-
-mutable struct FermionsbasisIterState
-    i::Int
-end
-
-#function Base.start(basis::AbstractFermionsbasis)
-#    FermionsbasisIterState(0)
-#end
-#
-#function Base.next(basis::AbstractFermionsbasis, state::FermionsbasisIterState)
-#    state.i += 1
-
-#    @view(basis.vectors[state.i]), state
-#end
-
-#function Base.done(basis::AbstractFermionsbasis, state::FermionsbasisIterState)
-#    state.i == basis.D
-#end
-
 Base.eltype(::Type{AbstractFermionsbasis}) = Int
 Base.length(basis::AbstractFermionsbasis) = basis.D
 
@@ -174,14 +199,6 @@ function FlipKet(v::Int,k:: Int64)
 end
 FlipKet(v::Int, basis::Fermionsbasis) = FlipKet(v,basis.K)
 
-#function FlipKet(v::Int,k:: Int64)
-#    return ~v & (2^k-1)::Int64
-#end
-#function FlipKet(v::Int,k:: Int64)
-#    return ~v & (~-(1<<k))  ::Int64
-#end
-
-
 # Reverse k bits from right to lift (101100 --> 001101)
 function ReverseKet(v::Int,k:: Int64)
     return (Mybswap(v) >>> (64-k))::Int64
@@ -213,10 +230,6 @@ function CircshiftKet(v::Int,k:: Int64)
     return (v << (64-k+1)>>>(64-k))|(v>>>(k-1))::Int64
 end
 CircshiftKet(v::Int,basis::Fermionsbasis) = CircshiftKet(v,basis.K)
-
-#function CircshiftKet(v::Int,k:: Int64)
-#    return ((v << 1)|(v>>>(k-1))) & (~-(1<<k)) ::Int64
-#end
 
 #creates a subset u out of v using the indices list A
 function SubKet(v::Int,A:: Array{Int,1}) 

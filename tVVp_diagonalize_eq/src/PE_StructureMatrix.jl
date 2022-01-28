@@ -1,12 +1,10 @@
 """
-Calculate the particle entanglement entropy for an eigenstate of the one-site-translation operator with eigenvalue q=0.
+Compute the structure matrix.
 """
-function PE_StructureMatrix(basis::AbstractFermionsbasis, Asize::Int, InvCycles_Id::Vector{Int64})
+function PE_StructureMatrix(L::Int,N::Int,Cycle_leaders::Vector{Int64}, Asize::Int)
     for x = [:Flips,:SumFlips]
        @eval $x = Int64
-    end
-    L = basis.K
-    N = basis.N
+    end 
     Bsize = N - Asize
     if Asize>Bsize
         Asize,Bsize=Bsize,Asize
@@ -14,35 +12,34 @@ function PE_StructureMatrix(basis::AbstractFermionsbasis, Asize::Int, InvCycles_
     if Asize==0
        return zeros(Int64,1,1,1)
     end
-    basisA = Fermionsbasis(L, Asize)
-    basisB = Fermionsbasis(L, Bsize)
 
-    CyclesA, CycleSizeA, NumOfCyclesA =Translational_Symmetry_Cycles(basisA)
-    CyclesB, CycleSizeB, NumOfCyclesB =Translational_Symmetry_Cycles(basisB)
+    Cycle_leadersA, Cycle_sizesA, NumOfCyclesA = translational_symmetry_cycles_biartition(L,Asize)
+    Cycle_leadersB, Cycle_sizesB, NumOfCyclesB = translational_symmetry_cycles_biartition(L,Bsize)
+
     AmatrixStructure=zeros(Int64,NumOfCyclesA, NumOfCyclesB,L)
-
 
     braA = Int
     braB = Int
     bra  = Int
-
 
     Aparity= Asize%2
     Bparity= Bsize%2
    # constructs the AmatrixStructure
     OcupationOverlap =2
     for i=1: NumOfCyclesB
-        braB=basisB.vectors[CyclesB[i,1]]
+        braB=Cycle_leadersB[i]
  
         for j=1: NumOfCyclesA 
-            minSize=CycleSizeA[j]
-            maxSize=CycleSizeB[i]
-            if CycleSizeA[j]>CycleSizeB[i]
+            minSize=Cycle_sizesA[j]
+            maxSize=Cycle_sizesB[i]
+            if Cycle_sizesA[j]>Cycle_sizesB[i]
                 minSize,maxSize=maxSize, minSize
             end
             phase0=1
-            for k=1: minSize             
-                braA= basisA.vectors[CyclesA[j,k]]
+            braA = Cycle_leadersA[j]
+            for k=1: minSize           
+                # obtain basisA.vectors[CyclesA[j,k]]  
+                braA = CircshiftKet(braA,L) 
                  bra=braA+braB
                     # absorbing phase changes due to a particle crossing the system boundary.
                     if Bparity==1 && j>1
@@ -57,7 +54,8 @@ function PE_StructureMatrix(basis::AbstractFermionsbasis, Asize::Int, InvCycles_
                        SumFlips += Flips* CheckSite(braB,Index)
                     end
                     phase=(-1)^SumFlips*phase0
-                    AmatrixStructure[j,i,k]= InvCycles_Id[serial_num(basis, bra)]* phase
+                    # need InvCycles_Id[serial_num(basis, bra)]
+                    AmatrixStructure[j,i,k]= lookup_cylceID_translationq0R1P1Cycles(bra,Cycle_leaders,L) * phase
                 end
             end
         end

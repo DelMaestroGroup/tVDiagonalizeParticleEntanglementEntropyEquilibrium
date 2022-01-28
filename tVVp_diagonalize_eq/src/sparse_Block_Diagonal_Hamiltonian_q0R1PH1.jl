@@ -10,10 +10,11 @@ struct FileHeader_Ham
 end
 
 """
+    sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, save_offdiagonal::Bool=false, storage_path::String="./")
 Create the sparse translational, reflection and particle-hole symmetry block H_(q=0,R=1,P=1) of the hamiltonian of fermionic 1D chains with PBC/APBC.
 """
-function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis, Cycles:: Array{Int64,2}, CycleSize:: Vector{Int64}, NumOfCycles::Int64, InvCycles_Id:: Vector{Int64}, InvCycles_order:: Vector{Int64}, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, save_offdiagonal::Bool=false, storage_path::String="./")
-    if basis.K!=2*basis.N
+function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, save_offdiagonal::Bool=false, storage_path::String="./")
+    if L!=2*N
         warn("particle-hole symmetry works only at half-filling,", "  quit")
         quit()
     end
@@ -22,39 +23,34 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis,
         quit()
     end
 
-    N = basis.N
-    M = basis.K
-
     if load_offdiagonal || save_offdiagonal  
-        storage_path = joinpath(storage_path, @sprintf "ham_offdiag_N%d_M%d.dat" N M)
+        storage_path = joinpath(storage_path, @sprintf "ham_offdiag_N%d_M%d.dat" N L)
     end
 
     #Creating the block H_(q=0,R=1,P=1) of the hamiltonian.
-    end_site = basis.K
+    end_site = L
 
     if load_offdiagonal
-        rows, cols, elements = load_offdiagonal_terms(storage_path,N,M,t)
+        rows, cols, elements = load_offdiagonal_terms(storage_path,N,L,t)
     else
         rows = Int64[]
         cols = Int64[]
         elements = Float64[]
         # Off-diagonal part
-        for CycleId =1: NumOfCycles  
-            bra=basis.vectors[Cycles[CycleId,1]]
-            CycleId_CycleSize=CycleSize[CycleId]
+        for CycleId = 1: NumOfCycles  
+            bra = Cycle_leaders[CycleId] 
+            CycleId_CycleSize=Cycle_sizes[CycleId]
             for j=1:end_site
-                j_next = j % basis.K + 1
+                j_next = j % L + 1
                 # Tunnel right, tunnel left.
                 for (site1, site2) in [(j, j_next), (j_next, j)]
                     if CheckSite(bra,site1) == 1
                         ket = copy(bra)
                         if CheckSite(bra,site2) == 0
                             ket =EmptySite(ket,site1)
-                            ket =OccupySite(ket,site2)
-                            kId=serial_num(basis, ket)
-                            CycleId1 = InvCycles_Id[kId]
-                            kIdcy = InvCycles_order[kId]
-                            CycleId1_CycleSize=CycleSize[CycleId1]
+                            ket =OccupySite(ket,site2) 
+                            CycleId1 = lookup_cylceID_translationq0R1P1Cycles(ket,Cycle_leaders,L)  
+                            CycleId1_CycleSize=Cycle_sizes[CycleId1]
                             k1=CycleId1
                             factor=-t*sqrt(CycleId_CycleSize/CycleId1_CycleSize)*.5
                             push!(rows, k1)
@@ -62,7 +58,7 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis,
                             push!(elements, factor)
                             push!(rows, CycleId)
                             push!(cols, k1)
-                            push!(elements, conj(factor))
+                            push!(elements, conj(factor)) 
                         end
                     end
                 end
@@ -70,19 +66,19 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis,
         end
 
         if save_offdiagonal
-            save_offdiagonal_terms(storage_path,M,N,t, rows, cols, elements)
+            save_offdiagonal_terms(storage_path,L,N,t, rows, cols, elements)
         end
     end
 
     # Diagonal terms
-    for CycleId =1: NumOfCycles 
+    for CycleId = 1: NumOfCycles 
         Vsum = 0.0
         Vpsum = 0.0
-        bra=basis.vectors[Cycles[CycleId,1]]
+        bra = Cycle_leaders[CycleId]
 
         for j=1:end_site
-            j_next = j % basis.K + 1
-            j_next_next = j_next % basis.K + 1
+            j_next = j % L + 1
+            j_next_next = j_next % L + 1
             Vsum += CheckSite(bra,j) * CheckSite(bra,j_next)
             Vpsum += CheckSite(bra,j) * CheckSite(bra, j_next_next)
 
@@ -92,7 +88,7 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(basis::AbstractFermionsbasis,
         push!(elements, Vsum*V+ Vpsum*Vp)
     end 
 
-        return sparse(rows, cols, elements, NumOfCycles, NumOfCycles), NumOfCycles
+        return sparse(rows, cols, elements, NumOfCycles, NumOfCycles), NumOfCycles 
 end
 
 function save_offdiagonal_terms(storage_path::String, M::Int64,N::Int64,t::Float64, rows::Vector{Int64}, cols::Vector{Int64}, elements::Vector{Float64})
