@@ -18,6 +18,7 @@ export
     symmetry_cycles_q0R1PH1,
     Block_Diagonal_Hamiltonian_q0R1PH1,
     sparse_Block_Diagonal_Hamiltonian_q0R1PH1,
+    save_offdiag_sparse_Block_Diagonal_Hamiltonian_q0R1PH1,
     lookup_cylceID_translationq0R1P1Cycles, 
     pair_correlation,
     ground_state,

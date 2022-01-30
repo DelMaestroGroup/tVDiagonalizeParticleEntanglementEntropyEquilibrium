@@ -12,6 +12,7 @@ using IntFermionicbasis
 using Printf
 using LinearAlgebra
 
+test_save_location = "./test/"
 
 # test helper functions
 function test_approx(got, truth, atol, verbose=true)
@@ -41,7 +42,10 @@ end
         # compute cycles 
         Cycle_leaders, Cycle_sizes, NumOfCycles = symmetry_cycles_q0R1PH1(M, N)
         # compute ground state 
-        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,load_offdiag,save_offdiag) 
+        if save_offdiag
+            save_offdiag_sparse_Block_Diagonal_Hamiltonian_q0R1PH1(M, N ,Cycle_leaders , Cycle_sizes, NumOfCycles, t,test_save_location)
+        end
+        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,load_offdiag,test_save_location) 
         # coefficents of basis states appearing in each cycle (renaming just for clarity) 
         for j=1: HRank
             Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])

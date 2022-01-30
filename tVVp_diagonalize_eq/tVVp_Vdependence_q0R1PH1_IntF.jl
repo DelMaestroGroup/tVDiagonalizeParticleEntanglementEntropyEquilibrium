@@ -117,6 +117,7 @@ function write_flush(stream::IO,str::String,toflush::Bool=true)
     if toflush
         flush(stream)
     end
+    return nothing
 end
 
 """Runs entanglement calculation for a range of interaction strenths V based on the input parameters.
@@ -266,15 +267,15 @@ function main()
     Cycle_leaders, Cycle_sizes, NumOfCycles = symmetry_cycles_q0R1PH1(M, N)
     # if requested, compute structure matrix only once here 
     if c[:no_recompute_structure_matrix]
-        AmatrixStructure =PE_StructureMatrix(M, N, Cycle_leaders, Asize) 
+        AmatrixStructure = PE_StructureMatrix(M, N, Cycle_leaders, Asize) 
     end
     # save off-diagonal terms once for V=0=V'
     if ~c[:skip_hoffdiag_saving] 
-        ground_state(M,N,Cycle_leaders, Cycle_sizes, NumOfCycles, t, 0.0, 0.0, boundary, false,true,tmp_folder)
+        save_offdiag_sparse_Block_Diagonal_Hamiltonian_q0R1PH1(M, N ,Cycle_leaders, Cycle_sizes, NumOfCycles, t, tmp_folder) 
     end
     for V in ProgressBar(V_array)
         # compute ground state Ψ and devide by cycle size below to get Ψ_coeff (only use single variable Ψ_coeff here)
-        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,~c[:skip_hoffdiag_loading],false,tmp_folder)
+        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,~c[:skip_hoffdiag_loading],tmp_folder)
         # coefficents of basis states appearing in each cycle (renaming just for clarity) 
         for j=1: HRank
             Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])
@@ -286,6 +287,7 @@ function main()
                 s_particle, obdm = particle_entropy_Ts(M, N, Asize, Ψ_coeff, true, AmatrixStructure) 
                 # save obdm to file (one file for each V)
                 save_obdm(obdm,M,N,V,Vp,out_folder_obdm)
+                obdm = nothing
             else
                 s_particle = particle_entropy_Ts(M, N, Asize, Ψ_coeff, false, AmatrixStructure) 
             end
@@ -294,6 +296,7 @@ function main()
                 s_particle, obdm = particle_entropy_Ts_and_structureMatrix(M, N, Asize, Ψ_coeff, Cycle_leaders, true) 
                 # save obdm to file (one file for each V)
                 save_obdm(obdm,M,N,V,Vp,out_folder_obdm)
+                obdm = nothing
             else
                 s_particle = particle_entropy_Ts_and_structureMatrix(M, N, Asize, Ψ_coeff, Cycle_leaders, false)  
             end
@@ -313,6 +316,7 @@ function main()
             g2 = pair_correlation(M, N, Ψ_coeff, Cycle_leaders)  
             # save to file
             write_flush(file_pcf_03, out_str_pcf_03(V,g2), ~c[:no_flush])
+            g2 = nothing
         end
         Ψ_coeff = nothing  
     end

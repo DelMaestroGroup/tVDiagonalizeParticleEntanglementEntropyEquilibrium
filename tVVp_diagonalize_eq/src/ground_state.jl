@@ -36,9 +36,9 @@ also returns the rank of the Hamiltonian, i.e. length of Ψ.
 """
 function ground_state(  L::Int, N::Int,Cycle_leaders::Vector{Int64}, Cycle_sizes::Vector{Int64}, NumOfCycles::Int64, 
                         t::Float64,V::Float64,Vp::Float64,boundary::BdryCond,
-                        load_offdiag::Bool=false,save_offdiag::Bool=false,storage_path::String="./")
+                        load_offdiag::Bool=false,storage_path::String="./")
 
-    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L, N ,Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, load_offdiag, save_offdiag, storage_path)
+    H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L, N ,Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, load_offdiag, storage_path)
     #print(" sparse_hamiltonian finish\n ")
     Ψ=zeros(ComplexF64, HRank)  
     Ψ .= eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t, V, boundary, HRank, Cycle_sizes,NumOfCycles))[2][1: HRank].*ones(ComplexF64, HRank)

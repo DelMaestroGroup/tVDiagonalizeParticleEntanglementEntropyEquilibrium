@@ -13,17 +13,13 @@ end
     sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, save_offdiagonal::Bool=false, storage_path::String="./")
 Create the sparse translational, reflection and particle-hole symmetry block H_(q=0,R=1,P=1) of the hamiltonian of fermionic 1D chains with PBC/APBC.
 """
-function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, save_offdiagonal::Bool=false, storage_path::String="./")
+function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, V::Float64, Vp::Float64, load_offdiagonal::Bool=false, storage_path::String="./")
     if L!=2*N
         warn("particle-hole symmetry works only at half-filling,", "  quit")
         quit()
-    end
-    if load_offdiagonal && save_offdiagonal
-        warn("save and load flag cannot be true at the same time,", "  quit")
-        quit()
-    end
+    end 
 
-    if load_offdiagonal || save_offdiagonal  
+    if load_offdiagonal  
         storage_path = joinpath(storage_path, @sprintf "ham_offdiag_N%d_M%d.dat" N L)
     end
 
@@ -64,10 +60,7 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders
                 end
             end
         end
-
-        if save_offdiagonal
-            save_offdiagonal_terms(storage_path,L,N,t, rows, cols, elements)
-        end
+ 
     end
 
     # Diagonal terms
@@ -89,6 +82,58 @@ function sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders
     end 
 
         return sparse(rows, cols, elements, NumOfCycles, NumOfCycles), NumOfCycles 
+end
+
+"""
+save_offdiag_sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, storage_path::String="./")
+Create the sparse translational, reflection and particle-hole symmetry block H_(q=0,R=1,P=1) of the hamiltonian of fermionic 1D chains with PBC/APBC
+and only save the offdiagonal elements to disk.
+"""
+function save_offdiag_sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L::Int, N::Int ,Cycle_leaders:: Vector{Int64}, Cycle_sizes:: Vector{Int64}, NumOfCycles::Int64, t::Float64, storage_path::String="./")
+    if L!=2*N
+        warn("particle-hole symmetry works only at half-filling,", "  quit")
+        quit()
+    end 
+    storage_path = joinpath(storage_path, @sprintf "ham_offdiag_N%d_M%d.dat" N L)
+    #Creating the block H_(q=0,R=1,P=1) of the hamiltonian.
+    end_site = L
+ 
+        rows = Int64[]
+        cols = Int64[]
+        elements = Float64[]
+        # Off-diagonal part
+        for CycleId = 1: NumOfCycles  
+            bra = Cycle_leaders[CycleId] 
+            CycleId_CycleSize=Cycle_sizes[CycleId]
+            for j=1:end_site
+                j_next = j % L + 1
+                # Tunnel right, tunnel left.
+                for (site1, site2) in [(j, j_next), (j_next, j)]
+                    if CheckSite(bra,site1) == 1
+                        ket = copy(bra)
+                        if CheckSite(bra,site2) == 0
+                            ket =EmptySite(ket,site1)
+                            ket =OccupySite(ket,site2) 
+                            CycleId1 = lookup_cylceID_translationq0R1P1Cycles(ket,Cycle_leaders,L)  
+                            CycleId1_CycleSize=Cycle_sizes[CycleId1]
+                            k1=CycleId1
+                            factor=-t*sqrt(CycleId_CycleSize/CycleId1_CycleSize)*.5
+                            push!(rows, k1)
+                            push!(cols, CycleId)
+                            push!(elements, factor)
+                            push!(rows, CycleId)
+                            push!(cols, k1)
+                            push!(elements, conj(factor)) 
+                        end
+                    end
+                end
+            end
+        end
+ 
+            save_offdiagonal_terms(storage_path,L,N,t, rows, cols, elements)
+    
+        return nothing
+
 end
 
 function save_offdiagonal_terms(storage_path::String, M::Int64,N::Int64,t::Float64, rows::Vector{Int64}, cols::Vector{Int64}, elements::Vector{Float64})
