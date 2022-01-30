@@ -8,6 +8,12 @@ using IntFermionicbasis
 using Printf 
 using ProgressBars
 using Dates
+using Pkg
+
+Pkg.add("Arpack")
+Pkg.add("ArgParse")
+Pkg.add("ProgressBars")
+Pkg.add("BenchmarkTools")
 
 # ------------------------------------------------------------------------------
 function parse_commandline()
