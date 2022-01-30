@@ -273,10 +273,9 @@ function main()
         ground_state(M,N,Cycle_leaders, Cycle_sizes, NumOfCycles, t, 0.0, 0.0, boundary, false,true,tmp_folder)
     end
     for V in ProgressBar(V_array)
-        # compute ground state 
-        Ψ, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,~c[:skip_hoffdiag_loading],false,tmp_folder)
-        # coefficents of basis states appearing in each cycle (renaming just for clarity)
-        Ψ_coeff = Ψ 
+        # compute ground state Ψ and devide by cycle size below to get Ψ_coeff (only use single variable Ψ_coeff here)
+        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,~c[:skip_hoffdiag_loading],false,tmp_folder)
+        # coefficents of basis states appearing in each cycle (renaming just for clarity) 
         for j=1: HRank
             Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])
         end
@@ -315,7 +314,7 @@ function main()
             # save to file
             write_flush(file_pcf_03, out_str_pcf_03(V,g2), ~c[:no_flush])
         end
- 
+        Ψ_coeff = nothing  
     end
 
  # ________4_Output_Finalization___________________

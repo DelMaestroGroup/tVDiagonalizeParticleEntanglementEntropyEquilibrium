@@ -134,7 +134,7 @@ function load_offdiagonal_terms(storage_path::String, N::Int64,M::Int64,t::Float
         println("t=",t)
         println("t_f=",t_f)
         println("adjust for this by multipying elements with t/t_f ..." ) 
-        elements = t/t_f.*elements
+        elements .= t/t_f.*elements
     end
 
     return rows, cols, elements

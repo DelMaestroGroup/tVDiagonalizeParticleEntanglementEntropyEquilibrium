@@ -41,7 +41,7 @@ function ground_state(  L::Int, N::Int,Cycle_leaders::Vector{Int64}, Cycle_sizes
     H, HRank = sparse_Block_Diagonal_Hamiltonian_q0R1PH1(L, N ,Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, load_offdiag, save_offdiag, storage_path)
     #print(" sparse_hamiltonian finish\n ")
     Ψ=zeros(ComplexF64, HRank)  
-    Ψ = eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t, V, boundary, HRank, Cycle_sizes,NumOfCycles))[2][1: HRank].*ones(ComplexF64, HRank)
+    Ψ .= eigs(H, nev=1, which=:SR,tol=1e-13,v0=getΨ0_trial(t, V, boundary, HRank, Cycle_sizes,NumOfCycles))[2][1: HRank].*ones(ComplexF64, HRank)
     H= Nothing
     Ψ.= Ψ./sqrt(dot(Ψ,Ψ))   
 

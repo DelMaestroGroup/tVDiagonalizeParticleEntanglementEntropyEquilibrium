@@ -61,7 +61,7 @@ function particle_entropy_Ts(L::Int, N::Int, Asize::Int, d::Vector{ComplexF64}, 
     Bparity= Bsize%2
     element= ComplexF64
 
-    #find the spectrum of the reduced density matrix
+    #find the spectrum of the reduced density matrix 
     for q=0:L-1
         Amatrixq=zeros(ComplexF64, NumOfCyclesA, NumOfCyclesB)
         for i=1: NumOfCyclesB

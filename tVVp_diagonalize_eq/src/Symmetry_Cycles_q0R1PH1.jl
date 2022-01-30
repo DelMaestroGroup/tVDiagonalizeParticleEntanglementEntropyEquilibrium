@@ -12,7 +12,7 @@ function symmetry_cycles_q0R1PH1(K::Int, N::Int)
     # Makes a Symbol for each, of type Int64
     for x = [:NumOfCycles,:Num_cycles_max,:MemberID,:i_next]
         @eval $x = Int64
-     end
+    end
     # construct the basis
     basis = Fermionsbasis(K,N)
     # length of the basis

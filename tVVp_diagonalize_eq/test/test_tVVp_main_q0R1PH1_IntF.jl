@@ -41,9 +41,8 @@ end
         # compute cycles 
         Cycle_leaders, Cycle_sizes, NumOfCycles = symmetry_cycles_q0R1PH1(M, N)
         # compute ground state 
-        Ψ, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,load_offdiag,save_offdiag) 
-        # coefficents of basis states appearing in each cycle (renaming just for clarity)
-        Ψ_coeff = Ψ 
+        Ψ_coeff, HRank = ground_state(M, N, Cycle_leaders, Cycle_sizes, NumOfCycles, t, V, Vp, boundary,load_offdiag,save_offdiag) 
+        # coefficents of basis states appearing in each cycle (renaming just for clarity) 
         for j=1: HRank
             Ψ_coeff[j]=Ψ_coeff[j]/sqrt(Cycle_sizes[j])
         end
