@@ -202,6 +202,11 @@ function main()
     # Interaction paramers V, V' 
     if  ~(c[:V_list]===nothing) && length(c[:V_list])> 0
         V_array = c[:V_list]  
+        c[:V_start] = c[:V_list][1]
+        c[:V_end] = c[:V_list][end]
+        # unique value for the list (to avoid unintential overwriting)
+        # sorry that is a quick fix, shold put some thoughts into it later
+        c[:V_step] = hash(c[:V_list])
     else
         V_array = c[:V_start]:c[:V_step]:c[:V_end]
     end 
