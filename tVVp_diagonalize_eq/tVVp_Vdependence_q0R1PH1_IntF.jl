@@ -94,6 +94,11 @@ function parse_commandline()
             help = "step in V"
             arg_type = Float64
             default = 0.1 
+        "--V-list" 
+            nargs = '*' 
+            help = "multiple V values used as V_array and ignore V-start, V-end, V-step"
+            arg_type = Float64 
+            required = false
         "--Vp"
             metavar = "Vp"
             help = "final Vp"
@@ -195,7 +200,11 @@ function main()
     Asize = c[:ee]
     ℓsize = div(M, 2)
     # Interaction paramers V, V' 
-    V_array = c[:V_start]:c[:V_step]:c[:V_end]
+    if  ~(c[:V_list]===nothing) && length(c[:V_list])> 0
+        V_array = c[:V_list]  
+    else
+        V_array = c[:V_start]:c[:V_step]:c[:V_end]
+    end 
     Vp = c[:Vp]
     # check parameters
     if M!=2N
