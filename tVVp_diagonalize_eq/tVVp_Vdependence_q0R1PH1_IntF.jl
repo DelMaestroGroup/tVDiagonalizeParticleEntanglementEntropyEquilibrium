@@ -236,26 +236,26 @@ function main()
     calculation_label = @sprintf "M%02d_N%02d_t%+5.3f_Vp%+5.3f_Vsta%+5.3f_Vend%+5.3f_Vstp%+5.3f" M N t Vp c[:V_start] c[:V_end] c[:V_step]
     # 2.1. output of particle entanglement (pe_01)
         # function to convert data to string
-        out_str_pe_01 = (V,data)->@sprintf "%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E\n" V data...
+        out_str_pe_01 = (V,data)->@sprintf "%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E\n" V data...
         # open file
         path_pe_01 = joinpath(out_folder,@sprintf "particle_entanglement_n%02d_%s.dat" Asize calculation_label)
         file_pe_01 = open(path_pe_01,"w")
         # write initial header
         write(file_pe_01, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), n=$(Asize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_pe_01, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write_flush(file_pe_01,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))" "S₀₋₅(n=$(Asize))")
+        write_flush(file_pe_01,@sprintf "#%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s\n" "V" "S₁(n=$(Asize))" "S₂(n=$(Asize))" "S₃(n=$(Asize))" "S₄(n=$(Asize))" "S₅(n=$(Asize))" "S₆(n=$(Asize))" "S₇(n=$(Asize))" "S₈(n=$(Asize))" "S₉(n=$(Asize))" "S₁₀(n=$(Asize))" "S₀₋₅(n=$(Asize))" "Sinf(n=$(Asize))")
  
     # 2.2. output of spatial entanglement (se_02)
     if c[:spatial]   
         # function to convert data to string
-        out_str_se_02 = (V,data)->@sprintf "%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E\n" V data...
+        out_str_se_02 = (V,data)->@sprintf "%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E%24.12E\n" V data...
         # open file
         path_se_02 = joinpath(out_folder,@sprintf "spatial_entanglement_l%02d_%s.dat" ℓsize calculation_label)
         file_se_02 = open(path_se_02,"w")
         # write initial header
         write(file_se_02, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), l=$(ℓsize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_se_02, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write_flush(file_se_02,@sprintf "#%24s#%24s#%24s%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s#%24s\n" "V" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))" "S₀₋₅(n=$(ℓsize))")      
+        write_flush(file_se_02,@sprintf "#%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s\n" "V" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))" "S₀₋₅(n=$(ℓsize))" "Sinf(n=$(Asize))")      
     end
 
     # 2.3. output of pair correlations (pcf_03)
@@ -343,16 +343,16 @@ function main()
 
  # ________4_Output_Finalization___________________
     # 4.1. output of particle entanglement (pe_01)
-        write_flush(file_pe_01,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_pe_01,"#\n#\n#Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_pe_01)    
     # 4.2. output of spatial entanglement (se_02)
     if c[:spatial]
-        write_flush(file_se_02,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_se_02,"#\n#\n#Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_se_02) 
     end 
     # 4.3. output of pair correlations (pcf_03)
     if c[:g2]
-        write_flush(file_pcf_03,"\n\n Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
+        write_flush(file_pcf_03,"#\n#\n#Calculation finished at  $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))")
         close(file_pcf_03)  
     end
 
