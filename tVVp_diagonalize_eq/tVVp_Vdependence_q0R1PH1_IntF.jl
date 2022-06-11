@@ -255,7 +255,7 @@ function main()
         # write initial header
         write(file_se_02, "# M=$(M), N=$(N), Vp=$(Vp), t=$(t), l=$(ℓsize), Vstart=$(c[:V_start]), Vstop=$(c[:V_end]), Vstep=$(c[:V_step]), $(boundary)\n")
         write(file_se_02, "# start time $(Dates.format(now(), "yyyy-mm-dd HH:MM:SS"))\n")
-        write_flush(file_se_02,@sprintf "#%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s\n" "V" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))" "S₀₋₅(n=$(ℓsize))" "Sinf(n=$(Asize))")      
+        write_flush(file_se_02,@sprintf "#%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s%24s\n" "V" "S₁(n=$(ℓsize))" "S₂(n=$(ℓsize))" "S₃(n=$(ℓsize))" "S₄(n=$(ℓsize))" "S₅(n=$(ℓsize))" "S₆(n=$(ℓsize))" "S₇(n=$(ℓsize))" "S₈(n=$(ℓsize))" "S₉(n=$(ℓsize))" "S₁₀(n=$(ℓsize))" "S₀₋₅(n=$(ℓsize))" "Sinf(n=$(ℓsize))")      
     end
 
     # 2.3. output of pair correlations (pcf_03)

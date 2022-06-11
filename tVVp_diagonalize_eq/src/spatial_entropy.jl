@@ -39,23 +39,28 @@ function spatial_entropy(L::Int, N::Int, A, d::Vector{ComplexF64},Cycle_leaders:
 
     Ss_raw = [svdvals(Amatrix) for Amatrix in Amatrices]
 
+
     # Spatial.
     S_sp = vcat(Ss_raw...)
-    err_sp = abs(sum(S_sp.^2) - 1.0)
-#        warn("RDM eigenvalue error ", S_sp)
+    λ = abs.(S_sp.^2)
+    # sort lambda for numerical stability
+    sort!(λ)
+    err_sp = abs(sum(λ) - 1.0) 
     if err_sp > 1e-12
         warn("RDM eigenvalue error ", err_sp)
     end
-    Sα = zeros(Float64,11)  
-    for k=1:length(S_sp)
-        if abs(S_sp[k])>0
-            Sα[1] -= abs(S_sp[k])^2*log(abs(S_sp[k])^2)
+    Sα = zeros(Float64,12)  
+    for k=1:length(λ)
+        if λ[k] >0
+            Sα[1] -= λ[k] *log(λ[k])
 	end
     end
     for α = 2:10
-        Sα[α] = -log(abs(sum(S_sp.^(2*α))))/(α-1)
+        Sα[α] = -log(abs(sum(λ.^(α))))/(α-1)
     end
-    Sα[11] = 2*log(abs(sum(S_sp)))
+    Sα[11] = 2.0*log(abs(sum(S_sp)))
+    # Renyi for alpha->inf
+    Sα[12] = -1.0*log(maximum(λ))
 
     # Operational.
     #Ss_op = [S / sqrt(n) for (S, n) in zip(Ss_raw, norms)]
