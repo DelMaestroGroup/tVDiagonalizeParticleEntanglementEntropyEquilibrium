@@ -5,15 +5,33 @@ Equilibrium version of the ED code for the t-V model
  
     julia .\tVVp_Vdependence_q0R1PH1_IntF.jl --out "./out/" --tmp "./tmp/" --spatial --V-start -3.0 --V-end 3.0 --V-step 0.01 --t 1.0 --ee 1 24 12
 
+### Required julia packages:
+- ArgParse
+-  Arpack  
+-  MKL
+-  ProgressBars 
+
 ### Usage
     julia tVVp_Vdependence_q0R1PH1_IntF.jl 
-                    [--out FOLDER] [--tmp FOLDER]
-                    [--out-obdm FOLDER] [--g2] [--obdm]
-                    [--spatial] [--skip-hoffdiag-saving]
-                    [--skip-hoffdiag-saving]
-                    [--no-flush] [--pbc] [--obc]
-                    [--V-start V_start] [--V-end V_end]
-                    [--V-step V_step] [--Vp Vp] [--t t] --ee ℓ M N
+                        [--out FOLDER]
+                        [--tmp FOLDER]
+                        [--out-obdm FOLDER] 
+                        [--g2] 
+                        [--obdm]
+                        [--spatial] 
+                        [--skip-hoffdiag-saving]
+                        [--skip-hoffdiag-loading] 
+                        [--no-flush]
+                        [--no-recompute-structure-matrix] 
+                        [--pbc]
+                        [--obc] 
+                        [--V-start V_start] 
+                        [--V-end V_end]
+                        [--V-step V_step] 
+                        [--V-list [V_LIST...]]
+                        [--Vp Vp] 
+                        [--t t] 
+                        --ee ℓ M N
 
 | positional arguments | Description |
 | --- | ----------- |
@@ -33,6 +51,7 @@ Equilibrium version of the ED code for the t-V model
 | --spatial         |    output the spatial entanglement entropy for ℓ= M/2 |
 | --skip-hoffdiag-saving | do not save offdiagonal terms of Hamiltonian for V=0 (if already saved or should never be saved in combination with --skip-hoffdiag-loading) |
 | --skip-hoffdiag-loading | do not load offdiagonal terms of Hamiltonian from V=0 |
+| --no-recompute-structure-matrix | only compute structure matrix once and keep it in memory (can cause memory problems for large systems but can speed up calculation) |
 | --no-flush       |     do not flush write buffer to output files in after computation for each V |
 | -h, --help     |       show help message and exit| 
 
@@ -48,7 +67,8 @@ Equilibrium version of the ED code for the t-V model
 | --V-start | start V (type: Float64, default: -2.0) |
 | --V-end | end V (type: Float64, default: 2.0) |
 | --V-step | step in V (type: Float64, default: 0.1) |
-|--Vp|| nnn interaction Vp (type: Float64, default: 0.0)
+| --V-list | space separated list of interaction values, if set ignore other V params |
+|--Vp| nnn interaction Vp (type: Float64, default: 0.0) |
 |--t| t hopping value (type: Float64, default: 1.0)|
   
 | entanglement entropy | Description |                  
